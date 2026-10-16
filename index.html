@@ -1,0 +1,278 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mavelli Sequence</title>
+    <style>
+        /* --- Core Architecture Definitions --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #0b0f19; /* Twilight void background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+            padding: 20px;
+        }
+
+        /* 3D Perspective Viewport */
+        .scene {
+            perspective: 1200px;
+            width: 100%;
+            max-width: 460px;
+            height: 320px;
+            position: relative;
+        }
+
+        /* The Envelope Enclosure */
+        .envelope {
+            width: 100%;
+            height: 100%;
+            background-color: #111a2e; /* Deep twilight blue */
+            border: 1px solid rgba(203, 213, 225, 0.6); /* Steady silver frame boundary */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* --- Mechanical Flaps (CSS Geometry) --- */
+        .flap {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            z-index: 3;
+            transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+        }
+
+        /* Top Unfolding Flap */
+        .flap.top {
+            top: 0;
+            left: 0;
+            border-width: 160px 229px 0 229px;
+            border-color: #1a2438 transparent transparent transparent;
+            transform-origin: top center;
+            z-index: 5;
+        }
+
+        /* Silver Hairline Lip Accent for Top Flap */
+        .flap.top::after {
+            content: '';
+            position: absolute;
+            top: -162px;
+            left: -230px;
+            border-style: solid;
+            border-width: 161px 230px 0 230px;
+            border-color: rgba(203, 213, 225, 0.7) transparent transparent transparent;
+            z-index: -1;
+        }
+
+        /* Static Side Flaps for Depth Structure */
+        .flap.left {
+            top: 0;
+            left: 0;
+            border-width: 160px 0 160px 230px;
+            border-color: transparent transparent transparent #151f36;
+            z-index: 4;
+        }
+
+        .flap.right {
+            top: 0;
+            right: 0;
+            border-width: 160px 230px 160px 0;
+            border-color: transparent #151f36 transparent transparent;
+            z-index: 4;
+        }
+
+        /* --- Interactive Seal Core --- */
+        .seal-system {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            touch-action: manipulation;
+            transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s ease;
+        }
+
+        /* Visual Reticle Bracket */
+        .alignment-bracket {
+            position: absolute;
+            width: 76px;
+            height: 76px;
+            border: 1.5px solid rgba(203, 213, 225, 0.4);
+            border-radius: 2px;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Deep Crimson Wax Glyphic Token */
+        .wax-token {
+            width: 48px;
+            height: 48px;
+            background: radial-gradient(circle, #851c1c 0%, #4a0e0e 100%);
+            border: 2px solid #a82424;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            user-select: none;
+            transition: all 0.5s ease;
+        }
+
+        /* --- STAGE 2: SEAL ACTIVATION STATE --- */
+        .envelope.activated .alignment-bracket {
+            width: 96px;
+            height: 96px;
+            border-color: rgba(203, 213, 225, 0.95);
+            transform: rotate(45deg);
+            box-shadow: 0 0 20px rgba(203, 213, 225, 0.5);
+        }
+
+        .envelope.activated .wax-token {
+            background: radial-gradient(circle, #b91c1c 0%, #6b1111 100%);
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.8);
+            transform: scale(1.12);
+        }
+
+        /* --- STAGE 3: SEAL DISSOLVING STATE --- */
+        .envelope.dissolved .seal-system {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.75);
+            pointer-events: none;
+        }
+
+        /* --- STAGE 4: ENVELOPE UNFOLDING STATE --- */
+        .envelope.unfolded .flap.top {
+            transform: rotateX(180deg);
+            z-index: 1; /* Moves cleanly behind the inner card layout */
+        }
+
+        /* --- THE VANTAGE REVEAL CARD --- */
+        .inner-card {
+            position: absolute;
+            inset: 12px;
+            background-color: #0d1322;
+            border: 1px solid rgba(203, 213, 225, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            opacity: 0;
+            transform: translateY(10px) scale(0.97);
+            transition: opacity 1.4s cubic-bezier(0.25, 1, 0.5, 1) 0.8s, 
+                        transform 1.4s cubic-bezier(0.25, 1, 0.5, 1) 0.8s;
+            z-index: 2;
+        }
+
+        .envelope.unfolded .inner-card {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .inscription {
+            font-size: 1.15rem;
+            line-height: 1.75;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            text-align: center;
+            font-style: italic;
+            max-width: 320px;
+            animation: softPulse 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes softPulse {
+            0% { color: #94a3b8; }
+            100% { color: #cbd5e1; }
+        }
+
+        /* --- Mobile Responsive Rules --- */
+        @media (max-width: 480px) {
+            .scene {
+                max-width: 340px;
+                height: 240px;
+            }
+            .flap.top {
+                border-width: 120px 169px 0 169px;
+            }
+            .flap.top::after {
+                top: -122px;
+                left: -170px;
+                border-width: 121px 170px 0 170px;
+            }
+            .flap.left { border-width: 120px 0 120px 170px; }
+            .flap.right { border-width: 120px 170px 120px 0; }
+            .inscription { font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scene">
+        <div class="envelope" id="mavelliEnvelope">
+            
+            <!-- Structural Base Architecture -->
+            <div class="flap top"></div>
+            <div class="flap left"></div>
+            <div class="flap right"></div>
+            
+            <!-- Interactive Mechanism Trigger -->
+            <div class="seal-system" id="sealTrigger">
+                <div class="alignment-bracket"></div>
+                <div class="wax-token">M</div>
+            </div>
+
+            <!-- Soft Corridor Destination Inside -->
+            <div class="inner-card">
+                <p class="inscription">
+                    This is your vantage when the frame steadies you steady
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const envelope = document.getElementById('mavelliEnvelope');
+            const trigger = document.getElementById('sealTrigger');
+
+            // Single click execution for complete automation workflow
+            trigger.addEventListener('click', () => {
+                
+                // Step 1: Initialize Seal Activation
+                envelope.classList.add('activated');
+                
+                // Step 2: Fade & Dissolve the Seal component
+                setTimeout(() => {
+                    envelope.classList.add('dissolved');
+                }, 1100);
+
+                // Step 3: Trigger physical geometric unfold sequence
+                setTimeout(() => {
+                    envelope.classList.add('unfolded');
+                }, 1800);
+            });
+        });
+    </script>
+</body>
+</html>
